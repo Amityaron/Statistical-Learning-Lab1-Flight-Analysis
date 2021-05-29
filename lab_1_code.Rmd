@@ -1,0 +1,404 @@
+---
+title: "lab_1"
+authror: "Akiva Finkelstein & Amit Yaron"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+```{r, warning=FALSE, message=FALSE, include=FALSE, echo=FALSE}
+library(nycflights13)
+library(dplyr)
+library(maps)
+library(usmap)
+library(ggplot2)
+library(plotly)
+library(gridExtra )
+library(GGally)
+```
+#Q1
+#Graph(I)
+1) The first plot wants to answer the question of the percentage of flights,\n departing from Denver airport, delayed 15 minutes and more.\n
+2)To our opinion the 
+the plot shows the information well. The colors of each delay category shows to\n
+which destination the proportion of delayed flights was high/low. Which can be\n very useful for optimizing scheduling.\n 
+3) The main question that arises is what could be the reason for all these\n 
+delays. It would be useful to check the connection to the airline carrier or\n
+to see if there are spesific times that have more delays.\n
+4)We believe that the graph would be easier to understand if the lines on the\n graph\n would thinner. It wouldn't have blocked such a large area of the map,\n blocking the many state abbreviations.
+
+
+#Graph (II)
+1) 
+The graph shows the cycles of the number of flights per day, and the number of\n 
+delayed flights from all flights every day.The graph answer the question among \n
+all the departing flight how many of the departing flights are with a delay of \n
+at least 15 minutes.
+
+2) Yes we can see clearly each day how many out of the total flights  had a delay.\n
+since both total flights and delayed flights are potted together it gives us a\n
+good picture of how many flights are delayed with respect to all flights in general. 
+3)Yes. IF we take a look at the graph from 31 August  to 2 November, we can see\n
+that departing flights are steady at around 700 per day.On the other hand we can\n
+see the graph of the delayed flights does fluctuate quite. Perhaps the amount of\n
+departing flights each day does not  effect the amount of delayed flights.\n
+4)We believe the information would be better understood if the plot would be split\n
+in to two separate plots. it is simply easier on the eyes. 
+
+#Q2
+#Graph of USA map with with connecting routs showing the percetage of departure \ndelay from JFK airport.  
+```{r,  warning=FALSE, message=FALSE, include=FALSE, echo=FALSE}
+flights_data <- flights
+flights_data <- flights_data %>% filter(origin == "JFK")
+
+flights_data$long_delay <- ifelse(flights_data$dep_delay >= 15,1,0) #adding long delay column
+
+flights_data <- flights_data %>% group_by(origin,dest,)%>%summarize(num_flights = n(),
+                                                                num_delays = sum(long_delay,na.rm = TRUE))
+#percent of delays 
+flights_data$delay_percent <-as.numeric(flights_data$num_delays / flights_data$num_flights)
+#breaking into category 
+flights_data$delay_deg <- cut(flights_data$delay_percent, breaks =c(-0.5, 0.1,0.15,0.2,0.25,Inf),labels = c("<=10%","10%-15%", "15%-20%", "20%-25%", ">25%"))
+
+flights_data[,c("delay_deg")][is.na(flights_data[,c("delay_deg")])] <- 0
+
+
+# getting lat and long of airports destination
+a <- airports
+a <- a %>% rename(dest = faa) 
+a1 <- data.frame(a$dest, a$lat, a$lon)
+a1 <- a1 %>% rename(dest =a.dest) %>% rename(dest_lon = a.lon) %>%
+  rename(dest_lat = a.lat)
+
+flights_data <- inner_join(flights_data, a1, by = "dest") 
+a1 <- a1 %>% rename(origin = dest)
+# getting lat and long of airports destination departures 
+flights_data <- inner_join(flights_data, a1, by = "origin")
+
+flights_data<- flights_data %>% rename(dest_lat = dest_lat.x) %>%
+  rename(dest_lon = dest_lon.x) %>% rename(dep_lat = dest_lat.y) %>% 
+  rename(dep_lon = dest_lon.y)
+
+
+
+
+lable_state <- data.frame(state.abb,state.center)#state coordinates
+lable_state <- lable_state %>% filter(state.abb != "AK") %>% filter(state.abb != "HI") 
+usa <- map_data("state") #map data
+
+
+```
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+#map
+
+
+gg4 <- ggplot()+
+  geom_polygon( data=usa, aes(x=long, y=lat, group=group),
+                color="gray", fill="white" )+
+  geom_text(data = lable_state, aes(x, y, label = state.abb), size = 2)+
+  geom_segment(data = flights_data,aes(x = dep_lon, y = dep_lat, xend = dest_lon,
+                                       yend = dest_lat, color = delay_deg), size =rel(0.2))+
+  coord_map(xlim = c(-127,-55), ylim=c(22,50))+
+  geom_point(data=flights_data, aes(dest_lon, dest_lat),
+             color = "gray",size = rel(1), shape=1)+
+  labs(title = "% of Flights Delayed > 15 min", subtitle = "Airport = JFK       Year = 2013")+
+theme(axis.title.y = element_blank(),
+      axis.title.x=element_blank(), 
+      plot.background = element_rect(color = "black"),
+      panel.background=element_rect(fill = "white"),
+      axis.ticks = element_blank(),
+      axis.text=element_blank(),
+      panel.border=element_blank(),
+      panel.grid.major=element_blank(),
+      panel.grid.minor=element_blank(),
+      legend.key = element_rect(fill = "white"),
+      legend.title = element_blank(),
+      legend.position = c(0.07,0.2),
+      plot.margin =  margin(1,0,0,0,"cm"),
+      plot.title = element_text(size = rel(1.5), hjust = 0.5,vjust = 2, face = "bold"),
+      plot.subtitle = element_text(size = rel(1), hjust = 0.5, color="grey 39", face = "bold"))
+  
+gg4
+ 
+```
+
+ 
+b)
+#graphic summarizing the flight volume and fights delayed,\n by date and showing weekly cycles.
+```{r,message=FALSE, warning=FALSE, include=FALSE, echo=FALSE}
+#Manipulating data tables
+
+
+flights_data <- flights #Upload the data 
+flights_delay <-filter(flights_data,dep_delay >= 15) #table with 15> delay 
+#convert (year month day) -> date
+flights_data$date <- as.Date(with(flights_data, paste(year, month, day,sep="-")), "%Y-%m-%d")
+flights_delay$date <- as.Date(with(flights_delay, paste(year, month, day,sep="-")), "%Y-%m-%d")
+
+
+#count the number of flight and number of flight with delay>=15
+t<-flights_data %>% group_by(date,year) %>% summarise(num_flights = n())
+h<-flights_delay %>% group_by(date,year) %>% summarise(flights_delay = n())
+
+
+
+#merge the data to one data frame
+gdata<-merge(t,h)
+#select points
+b1<-gdata[gdata$date=="2013-07-04",]
+b2<-gdata[gdata$date=="2013-11-28",]
+b<-rbind(b1,b2)
+
+```
+
+
+
+```{r ,fig2, fig.height = 4, fig.width = 7, fig.align = "center", echo=FALSE}
+#plot the graph
+#Graph with All Flight
+fig <- plot_ly(
+  type = "scatter",
+  x = as.Date(gdata$date, format= "%Y-%m-%d"), 
+  y = gdata$num_flights,
+  name = 'All Flight(scheduled for departure) ',
+  mode = "lines+markers",
+)
+
+
+#The min Points in the All Flight Graph
+fig<- fig %>% add_trace(y= ~b$num_flights,x=~b$date, 
+                        name = 'FEWER FLIGHTS ON HLIDAYS'
+                        ,type='scatter'
+                        ,mode='markers'
+                        ,size=10)
+fig <- fig %>% layout(xaxis = list(title = ""))
+
+
+
+#Graph with Late Flights(departure delayed>15 min)
+fig <- fig %>%
+  layout(
+    title = "WEEKLY CYCLES-Temporal Effects",
+    xaxis = list(
+      type = "date",
+      range=c('2013-01-01', '2014-01-01,date_breaks = "1 month"')
+    )
+  )
+fig<- fig %>% add_trace(y= ~gdata$flights_delay, name = 'Late Flights(departure delayed>15 min)',type = 'scatter', mode = 'lines+markers')
+fig <- fig %>% layout(yaxis = list (title = "Flight Per Days"))
+fig <- fig %>% layout(legend = list(orientation = 'h'))
+
+
+
+
+fig
+
+```
+
+
+#Q3
+```{r, warning=FALSE, message=FALSE, include=FALSE, echo=FALSE}
+
+# percent of flights delayed by carrier
+flights_data3 <- flights
+
+flights_data3$long_delay <- ifelse(flights_data3$dep_delay > 15,1,0) #adding long delay column
+
+flights_data3 <- flights_data3 %>% group_by(carrier)%>%summarize(num_flights = n(),
+                                                            num_delays =sum(long_delay,na.rm=TRUE))
+
+flights_data3$percent_delay <- round((flights_data3$num_delays / flights_data3$num_flights)*100,1)
+flights_data3$num_flights<- round(flights_data3$num_flights/1000,2)
+```
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+g3 <- ggplot(flights_data3, aes(carrier, percent_delay)) + geom_bar(stat = "identity",fill="purple") +
+scale_x_discrete("Airline Carrier") +
+  scale_y_continuous(expand = c(0.01,0.01))+
+  labs(title = "% of  Arrival Delays by Carrier", subtitle = "percetage of flights 
+  delayed 15 Min or more",y = "precent of arrival\ndelayed flights") +
+  geom_text(aes(label=percent_delay), vjust=1.6, size=3.0, color = "red")+
+  theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5, size = rel(1.2)),axis.text.x = element_text(angle = 90),
+        plot.subtitle = element_text(hjust = 0.5, size = rel(0.8)),
+        axis.title.y = element_text(angle = 90, size = rel(1),),
+        axis.title.x = element_text(angle = 0,size = rel(1)),)
+  
+g3.1 <- ggplot(flights_data3, aes(carrier, num_flights)) + geom_bar(stat = "identity",fill="steelblue") +
+scale_x_discrete("Airline Carrier") +
+  scale_y_continuous(expand = c(0.01,0.01))+
+  labs(title = "Number of Flights by Carrier",subtitle = "Number of flights in thousands ", y = "Number of Flights") +
+  geom_text(aes(label=num_flights), vjust=1.5, size=2.8, color = "red")+
+  theme_bw()+
+  theme(plot.title = element_text(hjust = 0.5, size = rel(1.2)),axis.text.x = element_text(angle = 90),
+        plot.subtitle = element_text(hjust = 0.5, size = rel(0.8)),
+        axis.title.y = element_text(angle = 90, size = rel(1)),
+        axis.title.x = element_text(angle = 0,size = rel(1)),)
+
+
+
+grid.arrange(g3.1, g3, 
+             ncol = 2, nrow = 1)
+```
+
+We can see from both plots how many flights in total each had and the percentage\n
+of flights with arrival delays of more then 15 minutes. Plotting these graphs\n together gives us a good picture on how well each airline does with minimizing delayed flights. For \n
+instance we can see that UA has the most flights in total but does not have the\n
+highest percentage of flights being delayed. Hence we can say that that amount \n
+of flights are not necessarily connected to high percentage of delays.  
+
+```{r,message=FALSE, warning=FALSE, include=FALSE, echo=FALSE}
+#Manipulating data tables
+weather_data<-weather
+weather_data$date<-as.Date(with(weather_data, paste(year, month, day,sep="-")), "%Y-%m-%d")#put date in the weather_date
+planes_data<-planes
+planes_seat100<-filter(planes_data,seats <= 100) #Choose only small planets <=100 seat 
+
+Q <- flights_data%>% filter(flights_data$tailnum == planes_seat100$tailnum)#Choose only flights data of small seat <=100 it include date ! 
+
+adata <- merge(Q,weather_data,by = c("origin","year","month","day","date","hour","time_hour"))
+
+
+
+```
+
+
+```{r,message=FALSE, warning=FALSE, echo=FALSE}
+#plot the graph
+
+
+analysis<-data.frame(adata$dep_delay,adata$arr_delay,adata$temp,adata$wind_speed,adata$humid,adata$visib)
+names(analysis)[1]<-"dep_delay"
+names(analysis)[2]<-"arr_delay"
+names(analysis)[3]<-"temp"
+names(analysis)[4]<-"wind_speed"
+names(analysis)[5]<-"humid"
+names(analysis)[6]<-"visib"
+#view(analysis)
+
+
+g9<-ggscatmat(analysis,alpha=0.8) +
+   ggtitle("Joint distribution of continuous variables scatterplot matrix") + 
+  theme(axis.text.x = element_text(angle=90, vjust=1, hjust=0, size=4), axis.text.y = 
+          element_text(angle=0, vjust=1, hjust=0, size=5))+
+  scale_x_continuous(expand = c(0.1,0.1))
+g9
+```
+
+In this graph we Try to understand which variables  related to weather effect\n
+the departure delay and how they effect each other.
+We focused on aircraft with up to 100 seats.
+we choose the weather variable : humid,temperature,wind speed , viability (how far we can see on miles).
+The Statistical  measurement we work with are join distribution correlation matrix and  approximate the histogram of the data.
+ 
+we can see we have strong  a strong connection between  arrivals delay and departure delay
+the correlation there is 0.94 also the join distribution graph looks like  line\n
+and not like random cloud.
+
+Also we can see some little  connection between humid and arrivals delay the correlation there is 0.24 
+and in the  join distribution graph we can that most of the point found mostly in the left area of the graph.
+
+In addition There is An interesting connection between visib and humid the\n
+correlation there is -0.54. Also the  joint distribution graph looks like A straight line.
+
+Finally the wind_speed is distrusted like Normal distribution
+And departure delay,arrivals delay came from the same distribution family with different parameters.
+
+
+#Q4
+We will check the null hypothesis:The proportion of delayed flights per month\n
+is independent across months.\n
+First we plot the real data in a bar pot. Then we will simulate plots from the\n
+real data, and try to identify the real data in the lineup. WE will plot 19 simulated plots to\n
+get a significance level of 95%. If we can detect the true data then we will reject\n
+the null hypothesis   
+```{r, warning=FALSE, message=FALSE, include=FALSE, echo=FALSE}
+flights_data4 <- flights
+flights_data4 <- flights_data4 %>% filter(origin == "JFK")
+
+flights_data4$long_delay <- ifelse(flights_data4$dep_delay > 15,1,0) #adding long delay column
+
+flights_data4 <- flights_data4 %>% group_by(month)%>%summarize(num_flights = n(),
+                                                        num_delays = sum(long_delay,na.rm = TRUE))
+flights_data4$prop_delay <- flights_data4$num_delays / flights_data4$num_flights
+
+flights_data4$month <- month.abb # converting to month.abb format
+```
+
+```{r,warning=FALSE,message=FALSE, echo=FALSE}
+                                                                                    
+# bar plot
+g1<-  ggplot(data = flights_data4) +
+  geom_col(aes(x = month, y = prop_delay)) +
+  scale_x_discrete(limits = month.abb) +
+  scale_y_continuous(expand = c(0.01,0.01), breaks = seq(0,0.5,0.025))+
+   labs(title = "True plot of the null hypothesis",
+        subtitle = "Null Hypothesis: The proportion of delayed flights\n
+        per month is independent across months",
+        y = "precent of\n delayed flights\n per month") +
+   
+   theme_bw()+
+   theme(plot.title = element_text(hjust = 0.5, size = rel(1.5)),
+         plot.subtitle = element_text(hjust = 0.5, size = rel(0.8)),
+         axis.title.y = element_text(angle = 0, size = rel(0.75),),
+         axis.title.x = element_text(size = rel(0.75)),)
+g1 
+```
+
+
+
+```{r, warning=FALSE, message=FALSE, echo=FALSE}
+
+x_rand <- as.data.frame(replicate(19, sample(flights_data4$prop_delay)))
+x_rand$month <- month.abb
+x_rand <- as.data.frame(x_rand)
+
+par(mfrow=c(4,5),oma = c(2, 2, 2, 2))
+par(mar=rep(2,4))
+barplot(height = flights_data4$prop_delay, names.arg =x_rand$month, main = "1",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V1, main = "2",names.arg =x_rand$month ,border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V2, names.arg = x_rand$month, main = "3",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V3, names.arg = x_rand$month, main = "4",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V4, names.arg = x_rand$month, main = "5",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V5, names.arg = x_rand$month, main = "6",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V6, names.arg = x_rand$month, main = "7",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V7, names.arg = x_rand$month, main = "8",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V8, names.arg = x_rand$month, main = "9",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V9, names.arg = x_rand$month, main = "10",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V10, names.arg = x_rand$month, main = "11",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V11, names.arg = x_rand$month, main = "12",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V12, names.arg = x_rand$month, main = "13",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V13, names.arg = x_rand$month, main = "14",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V14, names.arg = x_rand$month, main = "15",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V15, names.arg = x_rand$month, main = "16",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V16, names.arg = x_rand$month, main = "17",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V17, names.arg = x_rand$month, main = "18",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V18, names.arg = x_rand$month, main = "19",border="#69b3a2",las=2,cex.names=0.5)
+barplot(height = x_rand$V19, names.arg = x_rand$month, main = "20",border="#69b3a2",las=2,cex.names=0.5)
+mtext("Eye training: Delay Flight Proportion ", outer = TRUE, cex = 1)
+mtext("Month",at=-0.07, adj=0, cex=0.7,outer=TRUE,side = 3, line = 0)
+
+
+
+```
+
+
+#Lineup
+when examining the lineup it is  hard to identify the real data from the simulated\n
+data, with out having prior knowledge of the true data. Thus we can not reject \n
+the null hypothesis i.e we can't say that the proportion of delayed flights per\n
+month is independent across months.
+** The true data is in plot 1 **
+
+
