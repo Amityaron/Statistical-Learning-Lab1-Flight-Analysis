@@ -1,11 +1,22 @@
-# Statistical-Learning-Lab1
-Open the file Lab1_handout_52525.pdf  <br />
-Also Open the file Lab1.html
-On Graph Critique<br />
-I try to Summarize the percentage of flights, departing from Denver airport, delayed 15 minutes.<br />
-Also in the second graph, I summarizing the flight volume and fights delayed, by date and showing weekly cycles.<br />
-On the Freestyle analysis<br />
-I used the joint distribution of continuous variables in the scatterplot matrix.<br />
-Finally in Graphical "Lineup<br />
-I use Permutation statistical to check the null hypothesis: The proportion of delayed flights per month is independent across months.
+# Statistical-Learning-Lab1 Flight Analysis
 
+"We will analyze data for flights departing from three terminals in New York City during the year 2013. This flight data has been collected by the oversight agency responsible for supervising the airports. Our primary focus is on addressing the following questions:
+
+1. Flight Schedule: What can we infer about the recurrent flight schedule? Are there any recurring patterns of variation? How can we identify changes or deviations from the usual behavior?
+
+2. Flight Delays: What are the patterns of flight delays, both short and long? Can we identify potential causes that warrant further investigation?
+
+Please open the file Lab1_handout_52525.pdf for detailed information.
+
+Additionally, we request you to access the file Lab1.html, which contains our analysis for the Graph Critique section.
+
+In the Graph Critique section, we have provided a summary of the percentage of flights departing from the Denver airport that experienced a delay of 15 minutes. Furthermore, 
+
+
+In the second graph, we present a summary of the flight volume and the number of delayed flights categorized by date, with a particular focus on showcasing weekly cycles.
+
+For the Freestyle analysis, we employed the joint distribution of continuous variables in the scatterplot matrix.
+
+Lastly, in the Graphical "Lineup" section, we utilized Permutation statistics to test the null hypothesis, specifically whether the proportion of delayed flights per month is independent across different months."
+
+Please note that I have made some assumptions while revising the response. If you have specific changes or instructions you'd like to be incorporated, feel free to let me know.
