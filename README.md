@@ -6,6 +6,7 @@
 <img src="https://github.com/Amityaron/Statistical-Learning-Lab1-Flight-Analysis/blob/main/lab1.png" width="60%" height="30%">
 2. Flight Delays: What are the patterns of flight delays, both short and long? Can we identify potential causes that warrant further investigation?
 
+<img src="https://github.com/Amityaron/Statistical-Learning-Lab1-Flight-Analysis/blob/main/newplot.png" width="60%" height="30%">
 Please open the file Lab1_handout_52525.pdf for detailed information.
 
 Additionally, we request you to access the file Lab1.html, which contains our analysis for the Graph Critique section.
@@ -19,4 +20,5 @@ For the Freestyle analysis, we employed the joint distribution of continuous var
 
 Lastly, in the Graphical "Lineup" section, we utilized Permutation statistics to test the null hypothesis, specifically whether the proportion of delayed flights per month is independent across different months."
 
+<img src="https://github.com/Amityaron/Statistical-Learning-Lab1-Flight-Analysis/blob/main/lab1%20image2.png" width="60%" height="30%">
 Please note that I have made some assumptions while revising the response. If you have specific changes or instructions you'd like to be incorporated, feel free to let me know.
