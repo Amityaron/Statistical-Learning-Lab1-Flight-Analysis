@@ -3,7 +3,7 @@
 "We will analyze data for flights departing from three terminals in New York City during the year 2013. This flight data has been collected by the oversight agency responsible for supervising the airports. Our primary focus is on addressing the following questions:
 
 1. Flight Schedule: What can we infer about the recurrent flight schedule? Are there any recurring patterns of variation? How can we identify changes or deviations from the usual behavior?
-
+![lab1](https://github.com/Amityaron/Statistical-Learning-Lab1-Flight-Analysis/blob/main/lab1.png)
 2. Flight Delays: What are the patterns of flight delays, both short and long? Can we identify potential causes that warrant further investigation?
 
 Please open the file Lab1_handout_52525.pdf for detailed information.
